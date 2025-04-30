@@ -2,6 +2,7 @@ import axios from "axios";
 import { load } from "cheerio";
 import UserAgent from "user-agents";
 
+const BASE = "https://damoang.net";
 const URL_BASE = "https://damoang.net/new?page=";
 const PAGES = [1, 2];
 const randomUserAgent = new UserAgent().toString();
