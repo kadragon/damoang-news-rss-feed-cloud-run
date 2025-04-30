@@ -6,7 +6,11 @@
   "scripts": {
     "start": "node ./src/index.js"
   },
-  "keywords": [],
+  "keywords": [
+    "rss",
+    "damoang",
+    "news"
+  ],
   "author": "",
   "license": "ISC",
   "description": "",
@@ -14,7 +18,9 @@
     "@google-cloud/storage": "^7.16.0",
     "axios": "^1.9.0",
     "cheerio": "^1.0.0",
+    "compression": "^1.8.0",
     "express": "^5.1.0",
-    "rss": "^1.2.2"
+    "rss": "^1.2.2",
+    "user-agents": "^1.1.524"
   }
 }
