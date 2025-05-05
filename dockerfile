@@ -1,5 +1,11 @@
 FROM node:slim
 
+ENV TZ=Asia/Seoul
+RUN apt-get update && \
+    apt-get install -y tzdata && \
+    ln -fs /usr/share/zoneinfo/$TZ /etc/localtime && \
+    dpkg-reconfigure -f noninteractive tzdata
+
 WORKDIR /app
 
 COPY package*.json ./
