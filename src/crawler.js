@@ -11,33 +11,43 @@ const randomUserAgent = new UserAgent().toString();
  * tstr: 날짜 문자열 (HH:mm, "어제 HH:mm", "MM.DD HH:mm", "YYYY-MM-DD")
  * 반환: JavaScript Date 객체
  */
-export function parseDateString(tstr) {
+export function parseDateString(str) {
   const now = new Date();
+  const [year, month, date] = [
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  ];
 
-  if (/^\d{2}:\d{2}$/.test(tstr)) {
-    // 오늘 HH:mm
-    const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
-      2,
-      "0"
-    )}-${String(now.getDate()).padStart(2, "0")}T${tstr}:00`;
-    return new Date(iso);
-  } else if (tstr.startsWith("어제 ")) {
-    const time = tstr.replace("어제 ", "");
-    const y = new Date(now);
-    y.setDate(y.getDate() - 1);
-    const iso = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(
-      2,
-      "0"
-    )}-${String(y.getDate()).padStart(2, "0")}T${time}:00`;
-    return new Date(iso);
-  } else if (/^\d{2}\.\d{2}\s\d{2}:\d{2}$/.test(tstr)) {
-    const [md, hm] = tstr.split(" ");
-    const [mo, da] = md.split(".");
-    const iso = `${now.getFullYear()}-${mo}-${da}T${hm}:00`;
-    return new Date(iso);
-  } else {
-    return new Date(tstr); // ISO 문자열 또는 full date
+  if (/^\d{2}:\d{2}$/.test(str)) {
+    // 오늘 시간만 있는 경우
+    const [h, m] = str.split(":");
+    return new Date(year, month, date, h, m);
   }
+
+  if (/^어제\s+\d{2}:\d{2}$/.test(str)) {
+    // 어제 시간만 있는 경우
+    const [_, time] = str.split(" ");
+    const [h, m] = time.split(":");
+    const yesterday = new Date(year, month, date - 1);
+    return new Date(
+      yesterday.getFullYear(),
+      yesterday.getMonth(),
+      yesterday.getDate(),
+      h,
+      m
+    );
+  }
+
+  if (/^\d{2}\.\d{2}\s+\d{2}:\d{2}$/.test(str)) {
+    // MM.DD HH:mm 포맷
+    const [md, time] = str.split(" ");
+    const [mm, dd] = md.split(".").map((n) => parseInt(n, 10));
+    const [h, m] = time.split(":").map((n) => parseInt(n, 10));
+    return new Date(year, mm - 1, dd, h, m);
+  }
+
+  return new Date("Invalid Date");
 }
 
 export async function getItems() {

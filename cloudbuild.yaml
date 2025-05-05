@@ -27,7 +27,7 @@ steps:
       - "--platform"
       - "managed"
       - "--allow-unauthenticated"
-      - "--set-env-vars=CACHE_BUCKET=damoang-new-rss"
+      - "--set-env-vars=CACHE_BUCKET=damoang-new-rss,TZ=Asia/Seoul"
 
 images:
   - "gcr.io/workflow-knue/damoang-news-rss-feed:$SHORT_SHA"
