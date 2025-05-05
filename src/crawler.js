@@ -11,32 +11,32 @@ const randomUserAgent = new UserAgent().toString();
  * tstr: 날짜 문자열 (HH:mm, "어제 HH:mm", "MM.DD HH:mm", "YYYY-MM-DD")
  * 반환: JavaScript Date 객체
  */
-function parseDateString(tstr) {
+export function parseDateString(tstr) {
   const now = new Date();
+
   if (/^\d{2}:\d{2}$/.test(tstr)) {
-    // 오늘
-    return new Date(
-      `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()} ${tstr}`
-    );
+    // 오늘 HH:mm
+    const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}-${String(now.getDate()).padStart(2, "0")}T${tstr}:00`;
+    return new Date(iso);
   } else if (tstr.startsWith("어제 ")) {
-    // 어제
     const time = tstr.replace("어제 ", "");
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    return new Date(
-      `${yesterday.getFullYear()}-${
-        yesterday.getMonth() + 1
-      }-${yesterday.getDate()} ${time}`
-    );
+    const y = new Date(now);
+    y.setDate(y.getDate() - 1);
+    const iso = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}-${String(y.getDate()).padStart(2, "0")}T${time}:00`;
+    return new Date(iso);
   } else if (/^\d{2}\.\d{2}\s\d{2}:\d{2}$/.test(tstr)) {
-    // 2일 이전: MM.DD HH:mm
     const [md, hm] = tstr.split(" ");
-    const [mo, da] = md.split(".").map(Number);
-    const [hr, mi] = hm.split(":").map(Number);
-    return new Date(now.getFullYear(), mo - 1, da, hr, mi);
+    const [mo, da] = md.split(".");
+    const iso = `${now.getFullYear()}-${mo}-${da}T${hm}:00`;
+    return new Date(iso);
   } else {
-    // YYYY-MM-DD
-    return new Date(tstr);
+    return new Date(tstr); // ISO 문자열 또는 full date
   }
 }
 
