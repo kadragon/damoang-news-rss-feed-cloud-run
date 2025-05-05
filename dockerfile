@@ -2,14 +2,18 @@ FROM node:slim
 
 ENV TZ=Asia/Seoul
 RUN apt-get update && \
-    apt-get install -y tzdata && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends tzdata && \
     ln -fs /usr/share/zoneinfo/$TZ /etc/localtime && \
-    dpkg-reconfigure -f noninteractive tzdata
+    dpkg-reconfigure -f noninteractive tzdata && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
+RUN mkdir -p /app && chown node:node /app
+USER node
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install
+COPY package.json package-lock.json ./
+RUN npm ci
 
 COPY . .
 
