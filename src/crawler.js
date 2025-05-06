@@ -67,7 +67,12 @@ export async function getItems() {
       let link = a.attr("href");
       if (link.startsWith("/")) link = BASE + link;
 
-      const tstr = $(el).find(".wr-date span").first().text().trim();
+      const tstr = $(el)
+        .find(".wr-date")
+        .contents()
+        .filter((_, node) => node.type === "text")
+        .text()
+        .trim();
       const pubDate = parseDateString(tstr);
 
       items.push({ title, link, pubDate });
