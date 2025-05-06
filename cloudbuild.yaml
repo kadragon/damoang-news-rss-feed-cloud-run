@@ -4,14 +4,14 @@ steps:
     args:
       - "build"
       - "-t"
-      - "gcr.io/workflow-knue/damoang-news-rss-feed:$SHORT_SHA"
+      - "gcr.io/$_PROJECT_ID/damoang-news-rss-feed:$SHORT_SHA"
       - "."
 
   # 2. 이미지 Push
   - name: "gcr.io/cloud-builders/docker"
     args:
       - "push"
-      - "gcr.io/workflow-knue/damoang-news-rss-feed:$SHORT_SHA"
+      - "gcr.io/$_PROJECT_ID/damoang-news-rss-feed:$SHORT_SHA"
 
   # 3. Cloud Run 배포
   - name: "gcr.io/cloud-builders/gcloud"
@@ -21,7 +21,7 @@ steps:
       - "deploy"
       - "damoang-news-rss-feed"
       - "--image"
-      - "gcr.io/workflow-knue/damoang-news-rss-feed:$SHORT_SHA"
+      - "gcr.io/$_PROJECT_ID/damoang-news-rss-feed:$SHORT_SHA"
       - "--region"
       - "asia-northeast3"
       - "--platform"
@@ -30,4 +30,4 @@ steps:
       - "--set-env-vars=CACHE_BUCKET=damoang-new-rss,TZ=Asia/Seoul"
 
 images:
-  - "gcr.io/workflow-knue/damoang-news-rss-feed:$SHORT_SHA"
+  - "gcr.io/$_PROJECT_ID/damoang-news-rss-feed:$SHORT_SHA"

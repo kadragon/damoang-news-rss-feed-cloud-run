@@ -21,9 +21,6 @@ app.get("/rss", async (_, res) => {
   }
 });
 
-// Healthz
-app.get("/healthz", (_, res) => res.send("OK"));
-
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
