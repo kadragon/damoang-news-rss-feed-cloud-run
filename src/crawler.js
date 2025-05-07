@@ -64,6 +64,8 @@ export async function getItems() {
       if ($(el).hasClass("da-atricle-row--notice")) return;
 
       const title = a.text().trim();
+      if (title === '[삭제된 게시물 입니다]') return;
+      
       let link = a.attr("href");
       if (link.startsWith("/")) link = BASE + link;
 
