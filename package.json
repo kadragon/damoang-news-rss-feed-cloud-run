@@ -17,10 +17,12 @@
   "description": "",
   "dependencies": {
     "@google-cloud/storage": "^7.16.0",
+    "@mozilla/readability": "^0.6.0",
     "axios": "^1.9.0",
     "cheerio": "^1.0.0",
     "compression": "^1.8.0",
     "express": "^5.1.0",
+    "jsdom": "^26.1.0",
     "rss": "^1.2.2",
     "user-agents": "^1.1.536"
   },

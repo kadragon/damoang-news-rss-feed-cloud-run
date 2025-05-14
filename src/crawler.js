@@ -1,15 +1,18 @@
 import axios from "axios";
 import { load } from "cheerio";
 import UserAgent from "user-agents";
+import { JSDOM } from "jsdom";
+import { Readability } from "@mozilla/readability";
 
 const BASE = "https://damoang.net";
-const URL_BASE = "https://damoang.net/new?page=";
-const PAGES = [1, 2];
+const URL_BASE = "https://damoang.net/new";
 const randomUserAgent = new UserAgent().toString();
 
 /**
- * tstr: 날짜 문자열 (HH:mm, "어제 HH:mm", "MM.DD HH:mm", "YYYY-MM-DD")
- * 반환: JavaScript Date 객체
+ * Parses a date string in various formats and returns a JavaScript Date object.
+ *
+ * @param {string} str - The date string to parse (e.g., "HH:mm", "어제 HH:mm", "MM.DD HH:mm").
+ * @returns {Date} - A JavaScript Date object representing the parsed date, or an invalid date if parsing fails.
  */
 export function parseDateString(str) {
   const now = new Date();
@@ -19,16 +22,14 @@ export function parseDateString(str) {
     now.getDate(),
   ];
 
-  if (/^\d{2}:\d{2}$/.test(str)) {
-    // 오늘 시간만 있는 경우
-    const [h, m] = str.split(":");
-    return new Date(year, month, date, h, m);
+  const timeMatch = str.match(/(\d{2}):(\d{2})/);
+  if (!timeMatch) {
+    console.error(`Invalid date string format: "${str}"`);
+    return new Date("Invalid Date");
   }
+  const [h, m] = timeMatch.slice(1).map(Number);
 
-  if (/^어제\s+\d{2}:\d{2}$/.test(str)) {
-    // 어제 시간만 있는 경우
-    const [_, time] = str.split(" ");
-    const [h, m] = time.split(":");
+  if (/^어제/.test(str)) {
     const yesterday = new Date(year, month, date - 1);
     return new Date(
       yesterday.getFullYear(),
@@ -39,46 +40,67 @@ export function parseDateString(str) {
     );
   }
 
-  if (/^\d{2}\.\d{2}\s+\d{2}:\d{2}$/.test(str)) {
-    // MM.DD HH:mm 포맷
-    const [md, time] = str.split(" ");
-    const [mm, dd] = md.split(".").map((n) => parseInt(n, 10));
-    const [h, m] = time.split(":").map((n) => parseInt(n, 10));
+  if (/^\d{2}\.\d{2}/.test(str)) {
+    const [md] = str.split(" ");
+    const [mm, dd] = md.split(".").map(Number);
     return new Date(year, mm - 1, dd, h, m);
   }
 
-  return new Date("Invalid Date");
+  return new Date(year, month, date, h, m);
 }
 
+/**
+ * Fetches items from the target website, extracting title, link, publication date, and summary.
+ *
+ * @returns {Promise<Array<{title: string, link: string, pubDate: Date, summary: string}>>}
+ * - A promise that resolves to an array of item objects with title, link, pubDate, and summary.
+ */
 export async function getItems() {
-  const items = [];
-  for (const page of PAGES) {
-    const { data } = await axios.get(`${URL_BASE}${page}`, {
-      "User-Agent": randomUserAgent,
-    });
-    const $ = load(data);
+  const { data } = await axios.get(`${URL_BASE}`, {
+    headers: { "User-Agent": randomUserAgent },
+  });
+  const $ = load(data);
 
-    $("li.list-group-item.da-link-block").each((_, el) => {
+  const elements = Array.from($("li.list-group-item.da-link-block"));
+  const items = await Promise.all(
+    elements.map(async (el) => {
       const a = $(el).find("a.subject-ellipsis");
-      if (!a.length) return;
-      if ($(el).hasClass("da-atricle-row--notice")) return;
+      if (!a.length || $(el).hasClass("da-atricle-row--notice")) return null;
 
       const title = a.text().trim();
-      if (title === '[삭제된 게시물 입니다]') return;
-      
+      if (title === "[삭제된 게시물 입니다]") return null;
+
       let link = a.attr("href");
+      if (link.startsWith("/promotion")) return null;
       if (link.startsWith("/")) link = BASE + link;
 
-      const tstr = $(el)
-        .find(".wr-date")
-        .contents()
-        .filter((_, node) => node.type === "text")
-        .text()
-        .trim();
+      const tstr = $(el).find(".wr-date").text().replace("등록", "").trim();
       const pubDate = parseDateString(tstr);
+      const summary = await fetchAndParse(link);
 
-      items.push({ title, link, pubDate });
+      return { title, link, pubDate, summary };
+    })
+  );
+
+  return items.filter(Boolean);
+}
+
+/**
+ * Fetches and parses the content of a web page using Readability for article extraction.
+ *
+ * @param {string} url - The URL of the page to fetch and parse.
+ * @returns {Promise<string>} - A promise that resolves to the extracted article text, or an empty string if an error occurs.
+ */
+async function fetchAndParse(url) {
+  try {
+    const { data: html } = await axios.get(url, {
+      headers: { "User-Agent": randomUserAgent },
     });
+    const { document } = new JSDOM(html, { url }).window;
+    const article = new Readability(document).parse();
+    return article?.textContent.trim() ?? "";
+  } catch (error) {
+    console.error(`Error fetching or parsing [${url}]:`, error);
+    return "";
   }
-  return items;
 }
