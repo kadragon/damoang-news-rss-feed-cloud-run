@@ -1,8 +1,6 @@
 import axios from "axios";
 import { load } from "cheerio";
 import UserAgent from "user-agents";
-import { JSDOM } from "jsdom";
-import { Readability } from "@mozilla/readability";
 
 const BASE = "https://damoang.net";
 const URL_BASE = "https://damoang.net/new";
@@ -62,8 +60,7 @@ export async function getItems() {
   const $ = load(data);
 
   const elements = Array.from($("li.list-group-item.da-link-block"));
-  const items = await Promise.all(
-    elements.map(async (el) => {
+  const items = elements.map((el) => {
       const a = $(el).find("a.subject-ellipsis");
       if (!a.length || $(el).hasClass("da-atricle-row--notice")) return null;
 
@@ -76,31 +73,12 @@ export async function getItems() {
 
       const tstr = $(el).find(".wr-date").text().replace("등록", "").trim();
       const pubDate = parseDateString(tstr);
-      const summary = await fetchAndParse(link);
 
-      return { title, link, pubDate, summary };
-    })
-  );
+      return { title, link, pubDate };
+    });
 
   return items.filter(Boolean);
 }
 
-/**
- * Fetches and parses the content of a web page using Readability for article extraction.
- *
- * @param {string} url - The URL of the page to fetch and parse.
- * @returns {Promise<string>} - A promise that resolves to the extracted article text, or an empty string if an error occurs.
- */
-async function fetchAndParse(url) {
-  try {
-    const { data: html } = await axios.get(url, {
-      headers: { "User-Agent": randomUserAgent },
-    });
-    const { document } = new JSDOM(html, { url }).window;
-    const article = new Readability(document).parse();
-    return article?.textContent.trim() ?? "";
-  } catch (error) {
-    console.error(`Error fetching or parsing [${url}]:`, error);
-    return "";
-  }
-}
+const items = await getItems();
+console.log(items);
