@@ -9,7 +9,12 @@ const randomUserAgent = new UserAgent().toString();
 /**
  * Parses a date string in various formats and returns a JavaScript Date object.
  *
- * @param {string} str - The date string to parse (e.g., "HH:mm", "어제 HH:mm", "MM.DD HH:mm").
+ * Supports the following date formats:
+ * - "HH:mm" - Current date with specified time.
+ * - "어제 HH:mm" - Yesterday with specified time.
+ * - "MM.DD HH:mm" - Specified month and day with time in the current year.
+ *
+ * @param {string} str - The date string to parse.
  * @returns {Date} - A JavaScript Date object representing the parsed date, or an invalid date if parsing fails.
  */
 export function parseDateString(str) {
@@ -48,10 +53,17 @@ export function parseDateString(str) {
 }
 
 /**
- * Fetches items from the target website, extracting title, link, publication date, and summary.
+ * Fetches and parses news items from the target website.
  *
- * @returns {Promise<Array<{title: string, link: string, pubDate: Date, summary: string}>>}
- * - A promise that resolves to an array of item objects with title, link, pubDate, and summary.
+ * Each item includes the following properties:
+ * - title: The title of the news item.
+ * - link: The URL link to the news item.
+ * - pubDate: The publication date as a JavaScript Date object.
+ *
+ * @async
+ * @function getItems
+ * @returns {Promise<Array<{title: string, link: string, pubDate: Date}>>}
+ * - A promise that resolves to an array of news item objects.
  */
 export async function getItems() {
   const { data } = await axios.get(`${URL_BASE}`, {
@@ -61,24 +73,21 @@ export async function getItems() {
 
   const elements = Array.from($("li.list-group-item.da-link-block"));
   const items = elements.map((el) => {
-      const a = $(el).find("a.subject-ellipsis");
-      if (!a.length || $(el).hasClass("da-atricle-row--notice")) return null;
+    const a = $(el).find("a.subject-ellipsis");
+    if (!a.length || $(el).hasClass("da-atricle-row--notice")) return null;
 
-      const title = a.text().trim();
-      if (title === "[삭제된 게시물 입니다]") return null;
+    const title = a.text().trim();
+    if (title === "[삭제된 게시물 입니다]") return null;
 
-      let link = a.attr("href");
-      if (link.startsWith("/promotion")) return null;
-      if (link.startsWith("/")) link = BASE + link;
+    let link = a.attr("href");
+    if (link.startsWith("/promotion")) return null;
+    if (link.startsWith("/")) link = BASE + link;
 
-      const tstr = $(el).find(".wr-date").text().replace("등록", "").trim();
-      const pubDate = parseDateString(tstr);
+    const tstr = $(el).find(".wr-date").text().replace("등록", "").trim();
+    const pubDate = parseDateString(tstr);
 
-      return { title, link, pubDate };
-    });
+    return { title, link, pubDate };
+  });
 
   return items.filter(Boolean);
 }
-
-const items = await getItems();
-console.log(items);
